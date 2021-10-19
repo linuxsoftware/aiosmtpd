@@ -329,6 +329,7 @@ class SMTP(asyncio.StreamReaderProtocol):
             auth_callback: Optional[AuthCallbackType] = None,
             command_call_limit: Union[int, Dict[str, int], None] = None,
             authenticator: Optional[AuthenticatorType] = None,
+            stream_reader_class: Optional[asyncio.StreamReader] = asyncio.StreamReader,
             proxy_protocol_timeout: Optional[Union[int, float]] = None,
             loop: Optional[asyncio.AbstractEventLoop] = None
     ):
