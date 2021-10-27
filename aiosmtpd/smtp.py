@@ -335,8 +335,9 @@ class SMTP(asyncio.StreamReaderProtocol):
     ):
         self.__ident__ = ident or __ident__
         self.loop = loop if loop else make_loop()
+        self.stream_reader_class = stream_reader_class
         super().__init__(
-            asyncio.StreamReader(loop=self.loop, limit=self.line_length_limit),
+            self.stream_reader_class(loop=self.loop, limit=self.line_length_limit),
             client_connected_cb=self._cb_client_connected,
             loop=self.loop)
         self.event_handler = handler
