@@ -2,18 +2,52 @@
  NEWS for aiosmtpd
 ###################
 
+.. towncrier release notes start
 
-1.5.0 (aiosmtpd-next)
-=====================
+1.4.6 (2024-05-18)
+==================
 
-Added
------
-* Unthreaded Controllers (Closes #160)
+* STARTTLS is now fully enforced if used.
+
+1.4.5 (2024-03-02)
+==================
+
+* Fixed incorrect handling of newlines.
+
+
+1.4.4.post2 (2023-01-19)
+========================
 
 Fixed/Improved
 --------------
-* All Controllers now have more rationale design, as they are now composited from a Base + a Mixin
-* A whole bunch of annotations
+* Prevent unclean repo from being built (Closes #365)
+* Reduce chance of not-ready-for-release packages from being uploaded
+
+
+1.4.4 (2023-01-17)
+==================
+
+Fixed/Improved
+--------------
+* No longer expect an implicit creation of the event loop through ``get_event_loop()`` (Closes #353)
+
+
+1.4.3 (2022-12-21)
+=====================
+
+Fixed/Improved
+--------------
+* Is now compatible with uvloop
+* Add compatibility for Python 3.10 and 3.11 (Closes #322)
+* Test matrix update (Closes #306)
+
+  * Drop Python 3.6, PyPy 3.6 (some) and MacOS 10
+  * Add Python 3.10 & 3.11, PyPy 3.7 & 3.8, Ubuntu 22.04, MacOS 11 & 12
+
+* Expanded tox environments
+* Longer AUTOSTOP_DELAY especially for Windows (Closes #313)
+* Update signing keys
+* Some documentation fixes
 
 
 1.4.2 (2021-03-08)

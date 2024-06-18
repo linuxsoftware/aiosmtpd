@@ -53,6 +53,7 @@ CRLF = "\r\n"
 BCRLF = b"\r\n"
 MAIL_LOG = logging.getLogger("mail.log")
 MAIL_LOG.setLevel(logging.DEBUG)
+B64EQUALS = b64encode(b"=").decode()
 
 # fh = logging.FileHandler("~smtp.log")
 # fh.setFormatter(logging.Formatter("{asctime} - {levelname} - {message}", style="{"))
@@ -723,19 +724,6 @@ class TestSMTP(_CommonMethods):
         resp = client.docmd("MAIL FROM: <anne@example.com> FOO=BAR")
         assert resp == S.S555_MAIL_PARAMS_UNRECOG
 
-    # This was a bug, and it's already fixed since 3.6 (see bpo below)
-    # Since we now only support >=3.6, there is no point emulating this bug.
-    # Rather, we test that bug is fixed.
-    #
-    # # Test the workaround http://bugs.python.org/issue27931
-    # @patch('email._header_value_parser.AngleAddr.addr_spec',
-    #        side_effect=IndexError, new_callable=PropertyMock)
-    # def test_mail_fail_parse_email(self, addr_spec):
-    #     self.client.helo('example.com')
-    #     self.client.assert_cmd_resp(
-    #         'MAIL FROM: <""@example.com>',
-    #         (501, b'Syntax: MAIL FROM: <address>')
-    #     )
     def test_bpo27931fix_smtp(self, client):
         self._helo(client)
         resp = client.docmd('MAIL FROM: <""@example.com>')
@@ -823,21 +811,6 @@ class TestSMTP(_CommonMethods):
         resp = client.docmd(f"RCPT TO: {address}")
         assert resp == S.S553_MALFORMED
 
-    # This was a bug, and it's already fixed since 3.6 (see bpo below)
-    # Since we now only support >=3.6, there is no point emulating this bug
-    # Rather, we test that bug is fixed.
-    #
-    # # Test the workaround http://bugs.python.org/issue27931
-    # @patch('email._header_value_parser.AngleAddr.addr_spec',
-    #        new_callable=PropertyMock)
-    # def test_rcpt_fail_parse_email(self, addr_spec):
-    #     self.client.assert_ehlo_ok('example.com')
-    #     self.client.assert_cmd_ok('MAIL FROM: <anne@example.com>')
-    #     addr_spec.side_effect = IndexError
-    #     self.client.assert_cmd_resp(
-    #         'RCPT TO: <""@example.com>',
-    #         (501, b'Syntax: RCPT TO: <address> [SP <mail-parameters>]')
-    #     )
     def test_bpo27931fix_esmtp(self, client):
         self._ehlo(client)
         resp = client.docmd('MAIL FROM: <""@example.com> SIZE=28113')
@@ -985,7 +958,8 @@ class TestSMTPAuth(_CommonMethods):
         resp = client.docmd("AUTH WITH_UNDERSCORE")
         assert resp == (334, b"challenge")
         with warnings.catch_warnings(record=True) as w:
-            assert client.docmd("=") == S.S235_AUTH_SUCCESS
+            warnings.simplefilter(action="default", category=UserWarning)
+            assert client.docmd(B64EQUALS) == S.S235_AUTH_SUCCESS
         assert len(w) > 0
         assert str(w[0].message) == "AUTH interaction logging is enabled!"
         assert str(w[1].message) == "Sensitive information might be leaked!"
@@ -1099,7 +1073,7 @@ class TestAuthMechanisms(_CommonMethods):
         assert resp == S.S535_AUTH_INVALID
 
     def test_plain1_empty(self, do_auth_plain1):
-        resp = do_auth_plain1("=")
+        resp = do_auth_plain1(B64EQUALS)
         assert resp == S.S501_AUTH_CANTSPLIT
 
     def test_plain1_good_credentials(
@@ -1161,7 +1135,7 @@ class TestAuthMechanisms(_CommonMethods):
         assert resp == S.S535_AUTH_INVALID
 
     def test_plain2_no_credentials(self, client_auth_plain2):
-        resp = client_auth_plain2.docmd("=")
+        resp = client_auth_plain2.docmd(B64EQUALS)
         assert resp == S.S501_AUTH_CANTSPLIT
 
     def test_plain2_abort(self, client_auth_plain2):
@@ -1230,9 +1204,9 @@ class TestAuthMechanisms(_CommonMethods):
         assert resp == S.S535_AUTH_INVALID
 
     def test_login3_empty_credentials(self, do_auth_login3):
-        resp = do_auth_login3("=")
+        resp = do_auth_login3(B64EQUALS)
         assert resp == S.S334_AUTH_PASSWORD
-        resp = do_auth_login3("=")
+        resp = do_auth_login3(B64EQUALS)
         assert resp == S.S535_AUTH_INVALID
 
     def test_login3_abort_username(self, do_auth_login3):
@@ -1240,7 +1214,7 @@ class TestAuthMechanisms(_CommonMethods):
         assert resp == S.S501_AUTH_ABORTED
 
     def test_login3_abort_password(self, do_auth_login3):
-        resp = do_auth_login3("=")
+        resp = do_auth_login3(B64EQUALS)
         assert resp == S.S334_AUTH_PASSWORD
         resp = do_auth_login3("*")
         assert resp == S.S501_AUTH_ABORTED
@@ -2079,7 +2053,7 @@ class TestLimits(_CommonMethods):
 class TestSanitize:
     def test_loginpassword(self):
         lp = LoginPassword(b"user", b"pass")
-        expect = "LoginPassword(login='b'user'', password=...)"
+        expect = "LoginPassword(login='user', password=...)"
         assert repr(lp) == expect
         assert str(lp) == expect
 

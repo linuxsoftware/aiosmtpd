@@ -2,10 +2,11 @@
  aiosmtpd - An asyncio based SMTP server
 =========================================
 
-| |github license| |_| |PyPI Version| |_| |PyPI Python|
-| |GA badge| |_| |codecov| |_| |LGTM.com| |_| |readthedocs|
+| |github license| |_| |PyPI Version| |_| |PyPI Python| |_| |PyPI PythonImpl|
+| |GA badge| |_| |CodeQL badge| |_| |codecov| |_| |readthedocs|
 |
-| |Discourse|
+| |GH Discussions|
+|
 
 .. |_| unicode:: 0xA0
    :trim:
@@ -18,29 +19,31 @@
 .. |PyPI Python| image:: https://img.shields.io/pypi/pyversions/aiosmtpd?logo=python&logoColor=yellow
    :target: https://pypi.org/project/aiosmtpd/
    :alt: Supported Python Versions
+.. |PyPI PythonImpl| image:: https://img.shields.io/pypi/implementation/aiosmtpd?logo=python
+   :target: https://pypi.org/project/aiosmtpd/
+   :alt: Supported Python Implementations
 .. .. For |GA badge|, don't forget to check actual workflow name in unit-testing-and-coverage.yml
 .. |GA badge| image:: https://github.com/aio-libs/aiosmtpd/workflows/aiosmtpd%20CI/badge.svg
-   :target: https://github.com/aio-libs/aiosmtpd/actions
-   :alt: GitHub Actions status
+   :target: https://github.com/aio-libs/aiosmtpd/actions/workflows/unit-testing-and-coverage.yml
+   :alt: GitHub CI status
+.. |CodeQL badge| image:: https://github.com/aio-libs/aiosmtpd/workflows/CodeQL/badge.svg
+   :target: https://github.com/aio-libs/aiosmtpd/actions/workflows/codeql.yml
+   :alt: CodeQL status
 .. |codecov| image:: https://codecov.io/github/aio-libs/aiosmtpd/coverage.svg?branch=master
    :target: https://codecov.io/github/aio-libs/aiosmtpd?branch=master
    :alt: Code Coverage
-.. |LGTM.com| image:: https://img.shields.io/lgtm/grade/python/github/aio-libs/aiosmtpd.svg?logo=lgtm&logoWidth=18
-   :target: https://lgtm.com/projects/g/aio-libs/aiosmtpd/context:python
-   :alt: Semmle/LGTM.com quality
 .. |readthedocs| image:: https://img.shields.io/readthedocs/aiosmtpd?logo=Read+the+Docs&logoColor=white
    :target: https://aiosmtpd.readthedocs.io/en/latest/
    :alt: Documentation Status
-.. .. If you edit the above badges, don't forget to edit setup.cfg
-.. .. The |Discourse| badge MUST NOT be included in setup.cfg
-.. |Discourse| image:: https://img.shields.io/discourse/status?server=https%3A%2F%2Faio-libs.discourse.group%2F&style=social
-   :target: https://aio-libs.discourse.group/
-   :alt: Discourse
+.. |GH Discussions| image:: https://img.shields.io/github/discussions/aio-libs/aiosmtpd?logo=github&style=social
+   :target: https://github.com/aio-libs/aiosmtpd/discussions
+   :alt: GitHub Discussions
 
 The Python standard library includes a basic |SMTP|_ server in the |smtpd|_ module,
 based on the old asynchronous libraries |asyncore|_ and |asynchat|_.
 These modules are quite old and are definitely showing their age;
 ``asyncore`` and ``asynchat`` are difficult APIs to work with, understand, extend, and fix.
+(And have been deprecated since Python 3.6, and will be removed in Python 3.12.)
 
 With the introduction of the |asyncio|_ module in Python 3.4,
 a much better way of doing asynchronous I/O is now available.
@@ -55,30 +58,26 @@ Full documentation is available on |aiosmtpd rtd|_
 Requirements
 ============
 
-You need **at least Python 3.6** to use this library.
-
-
 Supported Platforms
 -----------------------
 
-``aiosmtpd`` has been tested on **CPython** and |PyPy3.7|_
+``aiosmtpd`` has been tested on **CPython**>=3.8 and |PyPy|_>=3.8
 for the following platforms (in alphabetical order):
 
-* Cygwin (on Windows 10) [1]
-* FreeBSD 12 [2]
-* OpenSUSE Leap 15 [2]
+* Cygwin (as of 2022-12-22, only for CPython 3.8, and 3.9)
+* MacOS 11 and 12
 * Ubuntu 18.04
 * Ubuntu 20.04
+* Ubuntu 22.04
 * Windows 10
-
-  | [1] Supported only with Cygwin-provided CPython versions
-  | [2] Supported only on the latest minor release
+* Windows Server 2019
+* Windows Server 2022
 
 ``aiosmtpd`` *probably* can run on platforms not listed above,
 but we cannot provide support for unlisted platforms.
 
-.. |PyPy3.7| replace:: **PyPy3.7**
-.. _`PyPy3.7`: https://www.pypy.org/
+.. |PyPy| replace:: **PyPy**
+.. _`PyPy`: https://www.pypy.org/
 
 
 Installation
@@ -153,19 +152,15 @@ option::
 
 You can also add the ``-s``/``--capture=no`` option to show output, e.g.::
 
-    $ tox -e py36-nocov -- -s
+    $ tox -e py311-nocov -- -s
 
 and these options can be combined::
 
-    $ tox -e py36-nocov -- -x -s <testname>
+    $ tox -e py311-nocov -- -x -s <testname>
 
 (The ``-e`` parameter is explained in the next section about 'testenvs'.
 In general, you'll want to choose the ``nocov`` testenvs if you want to show output,
 so you can see which test is generating which output.)
-
-The `-x` and `-s` options can be combined::
-
-    $ tox -e py36-nocov -- -x -s <testname>
 
 
 Supported 'testenvs'
@@ -175,7 +170,7 @@ In general, the ``-e`` parameter to tox specifies one (or more) **testenv**
 to run (separate using comma if more than one testenv). The following testenvs
 have been configured and tested:
 
-* ``{py36,py37,py38,py39,pypy3}-{nocov,cov,diffcov,profile}``
+* ``{py38,py39,py310,py311,py312,pypy3,pypy37,pypy38,pypy39}-{nocov,cov,diffcov,profile}``
 
   Specifies the interpreter to run and the kind of testing to perform.
 
@@ -188,7 +183,7 @@ have been configured and tested:
     This must be **invoked manually** using the ``-e`` parameter
 
   **Note 1:** As of 2021-02-23,
-  only the ``{py36,py38}-{nocov,cov}`` combinations work on **Cygwin**.
+  only the ``{py38,py39}-{nocov,cov}`` combinations work on **Cygwin**.
 
   **Note 2:** It is also possible to use whatever Python version is used when
   invoking ``tox`` by using the ``py`` target, but you must explicitly include
@@ -313,11 +308,19 @@ Starting version 1.3.1,
 files provided through `PyPI`_ or `GitHub Releases`_
 will be signed using one of the following GPG Keys:
 
-+-------------------------+----------------+------------------------------+
-| GPG Key ID              | Owner          | Email                        |
-+=========================+================+==============================+
-| ``5D60 CE28 9CD7 C258`` | Pandu E POLUAN | pepoluan at gmail period com |
-+-------------------------+----------------+------------------------------+
++-------------------------+----------------+----------------------------------+
+| GPG Key ID              | Owner          | Email                            |
++=========================+================+==================================+
+| ``5D60 CE28 9CD7 C258`` | Pandu E POLUAN | pepoluan at gmail period com     |
++-------------------------+----------------+----------------------------------+
+| ``5555 A6A6 7AE1 DC91`` | Pandu E POLUAN | pepoluan at gmail period com     |
++-------------------------+----------------+----------------------------------+
+| ``E309 FD82 73BD 8465`` | Wayne Werner   | waynejwerner at gmail period com |
++-------------------------+----------------+----------------------------------+
+| ``5FE9 28CD 9626 CE2B`` | Sam Bull       | sam at sambull period org        |
++-------------------------+----------------+----------------------------------+
+
+
 
 .. _PyPI: https://pypi.org/project/aiosmtpd/
 .. _`GitHub Releases`: https://github.com/aio-libs/aiosmtpd/releases

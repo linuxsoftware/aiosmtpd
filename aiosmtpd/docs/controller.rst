@@ -21,6 +21,12 @@ In both cases, you need to pass a :ref:`handler <handlers>` to the ``SMTP``
 constructor.  Handlers respond to events that you care about during the SMTP
 dialog.
 
+.. important::
+
+  Consider running the controller in a separate Python process (e.g., using the
+  :mod:`multiprocessing` module) if you don't want your main Python process to be
+  blocked when aiosmtpd is handling extra-large emails.
+
 
 Using the controller
 ====================
@@ -230,7 +236,8 @@ you'll have to do something similar to this:
 .. doctest:: unthreaded
 
     >>> import asyncio
-    >>> loop = asyncio.get_event_loop()
+    >>> loop = asyncio.new_event_loop()
+    >>> asyncio.set_event_loop(loop)
     >>> from aiosmtpd.controller import UnthreadedController
     >>> from aiosmtpd.handlers import Sink
     >>> controller = UnthreadedController(Sink(), loop=loop)
@@ -255,7 +262,7 @@ we'll also schedule an autostop so it won't hang:
     ...     loop.run_forever()
     >>> import threading
     >>> thread = threading.Thread(target=runner)
-    >>> thread.setDaemon(True)
+    >>> thread.daemon = True
     >>> thread.start()
     >>> import time
     >>> time.sleep(0.1)  # Allow the loop to begin

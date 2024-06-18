@@ -9,7 +9,6 @@
     Adapted & simplified from https://github.com/sphinx-contrib/autoprogram
 
     Besides the name change, here is a summary of the changes:
-    * Remove six; this is now Python>=3.6 only
     * Remove unit testing
     * Remove .lower() when processing metavar/desc
     * Add setup() return dict
@@ -32,21 +31,30 @@ import argparse
 import builtins
 import collections
 import os
-import sphinx
-
-from docutils import nodes
-from docutils.parsers.rst import Directive
-from docutils.parsers.rst.directives import unchanged
-from docutils.statemachine import StringList
 from functools import reduce
+from typing import Any, Dict, Iterable, List, Optional, Tuple
+
+import sphinx
+from docutils import nodes  # pytype: disable=pyi-error
+from docutils.parsers.rst import Directive  # pytype: disable=pyi-error
+from docutils.parsers.rst.directives import unchanged  # pytype: disable=pyi-error
+from docutils.statemachine import StringList
 from sphinx.util.nodes import nested_parse_with_titles
-from typing import Any, Dict, List, Optional, Tuple
 
 
 __all__ = ("AutoprogrammDirective", "import_object", "scan_programs", "setup")
 
 
-def get_subparser_action(parser: argparse.ArgumentParser) -> argparse._SubParsersAction:
+# Need to temporarily disable this particular check, because although this function
+# is guaranteed to return a proper value (due to how ArgumentParser works), pytype
+# doesn't really know that, and therefore raised an error  in the (to its view)
+# possible fallthrough of "implicit return None" if the "for a" loop exits without
+# finding the right item.
+#
+# pytype: disable=bad-return-type
+def get_subparser_action(
+    parser: argparse.ArgumentParser
+) -> Optional[argparse._SubParsersAction]:
     neg1_action = parser._actions[-1]
 
     if isinstance(neg1_action, argparse._SubParsersAction):
@@ -55,11 +63,13 @@ def get_subparser_action(parser: argparse.ArgumentParser) -> argparse._SubParser
     for a in parser._actions:
         if isinstance(a, argparse._SubParsersAction):
             return a
+    return None
+# pytype: enable=bad-return-type
 
 
 def scan_programs(
     parser: argparse.ArgumentParser,
-    command: List[str] = None,
+    command: Optional[List[str]] = None,
     maxdepth: int = 0,
     depth: int = 0,
     groups: bool = False,
@@ -81,7 +91,7 @@ def scan_programs(
         yield command, options, parser
 
     if parser._subparsers:
-        choices = ()
+        choices: Iterable[tuple[str, int]] = ()
 
         subp_action = get_subparser_action(parser)
 
@@ -89,10 +99,7 @@ def scan_programs(
             # noinspection PyUnresolvedReferences
             choices = subp_action.choices.items()
 
-        if not (
-            hasattr(collections, "OrderedDict")
-            and isinstance(choices, collections.OrderedDict)
-        ):
+        if not isinstance(choices, collections.OrderedDict):
             choices = sorted(choices, key=lambda pair: pair[0])
 
         for cmd, sub in choices:
@@ -111,8 +118,12 @@ def scan_options(actions: list):
 
 
 def format_positional_argument(arg: argparse.Action) -> Tuple[List[str], str]:
-    desc = (arg.help or "") % {"default": arg.default}
-    name = arg.metavar or arg.dest
+    desc: str = (arg.help or "") % {"default": arg.default}
+    name: str
+    if isinstance(arg.metavar, tuple):
+        name = arg.metavar[0]
+    else:
+        name = arg.metavar or arg.dest or ""
     return [name], desc
 
 
@@ -149,7 +160,6 @@ def import_object(import_name: str) -> Any:
         # an ImportError as it did before.
         import glob
         import sys
-        import os
         import imp
 
         for p in sys.path:
@@ -170,8 +180,8 @@ def import_object(import_name: str) -> Any:
     mod = reduce(getattr, module_name.split(".")[1:], mod)
     globals_ = builtins
     if not isinstance(globals_, dict):
-        globals_ = globals_.__dict__
-    return eval(expr, globals_, mod.__dict__)  # noqa: DUO104  # nosec
+        globals_ = globals_.__dict__  # type: ignore[assignment]
+    return eval(expr, globals_, mod.__dict__)  # type: ignore[arg-type]  # noqa: DUO104  # nosec
 
 
 class AutoprogrammDirective(Directive):
@@ -285,20 +295,21 @@ class AutoprogrammDirective(Directive):
 
 
 def render_rst(
-    title: str,
+    title: Optional[str],
     options: List[Tuple[List[str], str]],
     is_program: bool,
     is_subgroup: bool,
-    description: str,
+    description: Optional[str],
     usage: Optional[str],
     usage_strip: bool,
     usage_codeblock: bool,
-    epilog: str,
-    options_title: str,
+    epilog: Optional[str],
+    options_title: Optional[str],
     options_adornment: str,
 ):
     if usage_strip:
-        to_strip = title.rsplit(" ", 1)[0]
+        assert usage is not None
+        to_strip = (title or "").rsplit(" ", 1)[0]
 
         len_to_strip = len(to_strip) - 4
         usage_lines: List[str] = usage.splitlines()
